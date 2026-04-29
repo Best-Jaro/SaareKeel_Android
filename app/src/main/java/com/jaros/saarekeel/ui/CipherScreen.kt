@@ -1,26 +1,33 @@
 package com.jaros.saarekeel.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AssistChip
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,10 +37,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.jaros.saarekeel.crypto.SaarCipher
+import com.jaros.saarekeel.R
 import com.jaros.saarekeel.ui.theme.SaarekeelTheme
 
 @Composable
@@ -42,6 +53,23 @@ fun CipherScreen(modifier: Modifier = Modifier) {
         mutableStateOf("Sisesta siia oma sonum mida tolkida!")
     }
     val saarBitsCount = text.count { it.lowercaseChar() == 'o' || it.lowercaseChar() == 'ö' }
+    val context = LocalContext.current
+
+    fun copyToClipboard(content: String) {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("Saarekeele tekst", content)
+        clipboard.setPrimaryClip(clip)
+    }
+
+    fun pasteFromClipboard(): String {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = clipboard.primaryClip
+        return if (clip != null && clip.itemCount > 0) {
+            clip.getItemAt(0).text.toString()
+        } else {
+            ""
+        }
+    }
 
     Box(
         modifier = modifier
@@ -57,7 +85,9 @@ fun CipherScreen(modifier: Modifier = Modifier) {
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.96f)
             ),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
         ) {
             Column(
                 modifier = Modifier
@@ -83,7 +113,7 @@ fun CipherScreen(modifier: Modifier = Modifier) {
                     onValueChange = { text = it },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 140.dp),
+                        .heightIn(min = 140.dp, max = 250.dp),
                     shape = RoundedCornerShape(16.dp),
                     label = { Text("Tekst") },
                     colors = TextFieldDefaults.colors(
@@ -138,11 +168,98 @@ fun CipherScreen(modifier: Modifier = Modifier) {
                 }
 
                 Row(
-                    horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.fillMaxWidth()
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = { text = "" }) {
-                        Text("Clear", color = MaterialTheme.colorScheme.primary)
+                    Button(
+                        onClick = { copyToClipboard(text) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 50.dp, max = 50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
+                        contentPadding = PaddingValues(
+                            horizontal = 8.dp,
+                            vertical = 8.dp
+                        )
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_copy),
+                            contentDescription = "Copy",
+                            tint = Color.Unspecified,
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .size(18.dp)
+                        )
+                        Text(
+                            "Copy",
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+
+                    Button(
+                        onClick = { text = pasteFromClipboard() },
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 50.dp, max = 50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiary
+                        ),
+                        contentPadding = PaddingValues(
+                            horizontal = 8.dp,
+                            vertical = 8.dp
+                        )
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_paste),
+                            contentDescription = "Paste",
+                            tint = Color.Unspecified,
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .size(18.dp)
+                        )
+                        Text(
+                            "Paste",
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+
+                    Button(
+                        onClick = { text = "" },
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 50.dp, max = 50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
+                        ),
+                        contentPadding = PaddingValues(
+                            horizontal = 8.dp,
+                            vertical = 8.dp
+                        )
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_delete),
+                            contentDescription = "Clear",
+                            tint = Color.Unspecified,
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .size(18.dp)
+                        )
+                        Text(
+                            "Clear",
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
                 }
             }
