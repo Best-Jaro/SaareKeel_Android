@@ -36,7 +36,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +46,61 @@ import com.jaros.saarekeel.crypto.SaarCipher
 import com.jaros.saarekeel.R
 import com.jaros.saarekeel.ui.theme.SaarekeelTheme
 
+private fun copyToClipboard(context: Context, content: String) {
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    clipboard.setPrimaryClip(ClipData.newPlainText("Saarekeele tekst", content))
+}
+
+private fun pasteFromClipboard(context: Context): String {
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val clip = clipboard.primaryClip
+    return if (clip != null && clip.itemCount > 0) clip.getItemAt(0).text.toString() else ""
+}
+
+@Composable
+private fun ToolActionButton(
+    onClick: () -> Unit,
+    containerColor: androidx.compose.ui.graphics.Color,
+    contentColor: androidx.compose.ui.graphics.Color,
+    iconRes: Int,
+    label: String,
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            focusedElevation = 0.dp,
+            hoveredElevation = 0.dp,
+            disabledElevation = 0.dp
+        ),
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+    ) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = contentDescription,
+            tint = contentColor,
+            modifier = Modifier
+                .padding(end = 4.dp)
+                .size(18.dp)
+        )
+        Text(
+            label,
+            fontSize = 12.sp,
+            maxLines = 1,
+            softWrap = false
+        )
+    }
+}
+
 @Composable
 fun CipherScreen(modifier: Modifier = Modifier) {
     var text by rememberSaveable {
@@ -54,22 +108,6 @@ fun CipherScreen(modifier: Modifier = Modifier) {
     }
     val saarBitsCount = text.count { it.lowercaseChar() == 'o' || it.lowercaseChar() == 'ö' }
     val context = LocalContext.current
-
-    fun copyToClipboard(content: String) {
-        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("Saarekeele tekst", content)
-        clipboard.setPrimaryClip(clip)
-    }
-
-    fun pasteFromClipboard(): String {
-        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = clipboard.primaryClip
-        return if (clip != null && clip.itemCount > 0) {
-            clip.getItemAt(0).text.toString()
-        } else {
-            ""
-        }
-    }
 
     Box(
         modifier = modifier
@@ -80,7 +118,7 @@ fun CipherScreen(modifier: Modifier = Modifier) {
     ) {
         Card(
             shape = RoundedCornerShape(24.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.96f)
@@ -172,95 +210,41 @@ fun CipherScreen(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Button(
-                        onClick = { copyToClipboard(text) },
+                    ToolActionButton(
+                        onClick = { copyToClipboard(context, text) },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        iconRes = R.drawable.ic_copy,
+                        label = "Copy",
+                        contentDescription = "Copy",
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(min = 50.dp, max = 50.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ),
-                        contentPadding = PaddingValues(
-                            horizontal = 8.dp,
-                            vertical = 8.dp
-                        )
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_copy),
-                            contentDescription = "Copy",
-                            tint = Color.Unspecified,
-                            modifier = Modifier
-                                .padding(end = 4.dp)
-                                .size(18.dp)
-                        )
-                        Text(
-                            "Copy",
-                            fontSize = 12.sp,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
+                    )
 
-                    Button(
-                        onClick = { text = pasteFromClipboard() },
+                    ToolActionButton(
+                        onClick = { text = pasteFromClipboard(context) },
+                        containerColor = MaterialTheme.colorScheme.tertiary,
+                        contentColor = MaterialTheme.colorScheme.onTertiary,
+                        iconRes = R.drawable.ic_paste,
+                        label = "Paste",
+                        contentDescription = "Paste",
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(min = 50.dp, max = 50.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiary
-                        ),
-                        contentPadding = PaddingValues(
-                            horizontal = 8.dp,
-                            vertical = 8.dp
-                        )
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_paste),
-                            contentDescription = "Paste",
-                            tint = Color.Unspecified,
-                            modifier = Modifier
-                                .padding(end = 4.dp)
-                                .size(18.dp)
-                        )
-                        Text(
-                            "Paste",
-                            fontSize = 12.sp,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
+                    )
 
-                    Button(
+                    ToolActionButton(
                         onClick = { text = "" },
+                        containerColor = MaterialTheme.colorScheme.secondary,
+                        contentColor = MaterialTheme.colorScheme.onSecondary,
+                        iconRes = R.drawable.ic_delete,
+                        label = "Clear",
+                        contentDescription = "Clear",
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(min = 50.dp, max = 50.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary
-                        ),
-                        contentPadding = PaddingValues(
-                            horizontal = 8.dp,
-                            vertical = 8.dp
-                        )
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_delete),
-                            contentDescription = "Clear",
-                            tint = Color.Unspecified,
-                            modifier = Modifier
-                                .padding(end = 4.dp)
-                                .size(18.dp)
-                        )
-                        Text(
-                            "Clear",
-                            fontSize = 12.sp,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
+                    )
                 }
             }
         }
